@@ -1,0 +1,6 @@
+.vscode/
+.tup/
+
+headers/GLFW/
+libs/
+build/
