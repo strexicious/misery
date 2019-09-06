@@ -8,7 +8,7 @@
 
 class Engine {
 public:
-    Engine(Chassis chassis);
+    Engine(Chassis&& chassis);
 
     void run_loop() const;
 

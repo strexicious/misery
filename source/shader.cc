@@ -39,6 +39,13 @@ Program::Program(std::string const& vsource, std::string const& fsource) {
     
     glDeleteShader(vshader);
     glDeleteShader(fshader);
+
+    try {
+        confirm_linkage(program_id);
+    } catch (std::runtime_error& e) {
+        glDeleteProgram(program_id);
+        throw std::runtime_error("Program error: " + std::string(e.what()));
+    }
 }
 
 GLuint Program::id() const {
@@ -55,6 +62,21 @@ void Program::confirm_compilation(GLuint shader) {
         std::string log;
         log.resize(log_length);
         glGetShaderInfoLog(shader, log_length, nullptr, &log[0]);
+
+        throw std::runtime_error(log);
+    }
+}
+
+void Program::confirm_linkage(GLuint program) {
+    GLint status;
+    glGetProgramiv(program, GL_LINK_STATUS, &status);
+    if (status == GL_FALSE) {
+        GLsizei log_length;
+        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_length);
+        
+        std::string log;
+        log.resize(log_length);
+        glGetProgramInfoLog(program, log_length, nullptr, &log[0]);
 
         throw std::runtime_error(log);
     }

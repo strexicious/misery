@@ -15,6 +15,7 @@ private:
     GLuint program_id;
 
     static void confirm_compilation(GLuint shader);
+    static void confirm_linkage(GLuint program);
 };
 
 std::string read_shader(std::string const& path);

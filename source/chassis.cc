@@ -1,9 +1,9 @@
 #include <stdexcept>
-#include <iostream>
 #include <glad/glad.h>
 #include "chassis.hh"
 
 bool Chassis::built = false;
+bool Chassis::moving = false;
 
 Chassis::Chassis(int width, int height, ColorRGB color)
     : WIDTH{width}, HEIGHT{height} {
@@ -14,7 +14,7 @@ Chassis::Chassis(int width, int height, ColorRGB color)
         throw std::runtime_error("Failed to start GLFW");
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
@@ -39,7 +39,11 @@ Chassis::Chassis(int width, int height, ColorRGB color)
     glClearColor(color.r, color.g, color.b, 1.0f);
 
     built = true;
-    std::cout << "Ye boiiii" << std::endl;
+}
+
+Chassis::Chassis(Chassis&& other)
+    : WIDTH{other.WIDTH}, HEIGHT{other.HEIGHT}, window{other.window} {
+    moving = true;
 }
 
 GLFWwindow* Chassis::get_window() const {
@@ -47,10 +51,10 @@ GLFWwindow* Chassis::get_window() const {
 }
 
 Chassis::~Chassis() {
-    if (!built)
-        throw std::runtime_error("Chassis doesn't exist");
-    std::cout << "BRUH?!" << std::endl;
-    glfwDestroyWindow(window);
-    glfwTerminate();
-    built = false;
+    if (built && !moving) {
+        glfwDestroyWindow(window);
+        glfwTerminate();
+        built = false;
+    }
+    moving = false;
 }
