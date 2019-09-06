@@ -2,5 +2,8 @@
 .tup/
 
 headers/GLFW/
+headers/glad/
+headers/KHR/
 libs/
 build/
+source/glad.c

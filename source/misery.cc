@@ -1,37 +1,15 @@
-#include <cstdio>
 #include <iostream>
-#include <GLFW/glfw3.h>
+#include "engine.hh"
 
 int main() {
-    GLFWwindow* window;
-
-    /* Initialize the library */
-    if (!glfwInit())
-        return EXIT_FAILURE;
-
-    /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
-    if (!window) {
-        glfwTerminate();
+    try {
+        Chassis chassis(800, 600, ColorRGB{0.2f, 0.2f, 0.2f});
+        Engine ngn(std::move(chassis));
+        // ngn.run_loop();
+    } catch (std::runtime_error& e) {
+        std::cerr << e.what() << '\n';
         return EXIT_FAILURE;
     }
 
-    /* Make the window's context current */
-    glfwMakeContextCurrent(window);
-
-    /* Loop until the user closes the window */
-    while (!glfwWindowShouldClose(window)) {
-        /* Render here */
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        /* Swap front and back buffers */
-        glfwSwapBuffers(window);
-
-        /* Poll for and process events */
-        glfwPollEvents();
-    }
-
-    glfwTerminate();
-    
     return EXIT_SUCCESS;
 }

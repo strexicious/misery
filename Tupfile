@@ -1,5 +1,7 @@
+CXX = g++
 CFLAGS += -std=c++17 -Wall -Iheaders/
 LIBS = -Llibs/ -lglfw3 -lgdi32 -lopengl32
 
-: foreach source/*.cc |> g++ $(CFLAGS) -c %f -o %o |> build/objects/%B.o
-: build/objects/*.o |> g++ %f -o %o $(LIBS) |> build/misery.exe
+: foreach source/*.cc |> $(CXX) $(CFLAGS) -c %f -o %o |> build/objects/%B.o
+: source/glad.c |> $(CXX) $(CFLAGS) -c %f -o %o |> build/objects/glad.o
+: build/objects/*.o |> $(CXX) %f -o %o $(LIBS) |> build/misery.exe
