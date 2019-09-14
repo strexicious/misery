@@ -1,5 +1,8 @@
 #include <stdexcept>
 #include <glad/glad.h>
+#include <imgui.h>
+#include <imgui_impl_opengl3.h>
+#include <imgui_impl_glfw.h>
 #include "chassis.hh"
 
 bool Chassis::built = false;
@@ -37,6 +40,15 @@ Chassis::Chassis(int width, int height, ColorRGB color)
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glClearColor(color.r, color.g, color.b, 1.0f);
+
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    // Setup Platform/Renderer bindings
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 330 core");
+    // Setup Dear ImGui style
+    ImGui::StyleColorsDark();
 
     built = true;
 }

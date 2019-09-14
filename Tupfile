@@ -1,7 +1,12 @@
 CXX = g++
-CFLAGS += -std=c++17 -Wall -Iheaders/
-LIBS = -Llibs/ -lglfw3 -lgdi32 -lopengl32
+CFLAGS += -std=c++17 -Wall -Iheaders/ -Iimgui/
+LIBS = -Llibs/ -lglfw3 -lgdi32 -lopengl32 -limgui
 
+# imgui
+: foreach imgui/*.cpp |> $(CXX) $(CFLAGS) -DIMGUI_IMPL_OPENGL_LOADER_GLAD -c %f -o %o |> imgui/%B.o
+: imgui/*.o |> ar rcs %o %f |> libs/libimgui.a
+
+# misery
 : foreach source/*.cc |> $(CXX) $(CFLAGS) -c %f -o %o |> build/objects/%B.o
 : source/glad.c |> $(CXX) $(CFLAGS) -c %f -o %o |> build/objects/glad.o
-: build/objects/*.o |> $(CXX) %f -o %o $(LIBS) |> build/misery.exe
+: libs/libimgui.a build/objects/*.o |> $(CXX) %f -o %o $(LIBS) |> build/misery.exe

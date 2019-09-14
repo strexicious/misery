@@ -7,3 +7,6 @@ headers/KHR/
 libs/
 build/
 source/glad.c
+imgui/
+
+imgui.ini
