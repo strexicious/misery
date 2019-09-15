@@ -8,5 +8,6 @@ LIBS = -Llibs/ -lglfw3 -lgdi32 -lopengl32 -limgui
 
 # misery
 : foreach source/*.cc |> $(CXX) $(CFLAGS) -c %f -o %o |> build/objects/%B.o
+: foreach source/renderers/*.cc |> $(CXX) $(CFLAGS) -c %f -o %o |> build/objects/%B.o
 : source/glad.c |> $(CXX) $(CFLAGS) -c %f -o %o |> build/objects/glad.o
 : libs/libimgui.a build/objects/*.o |> $(CXX) %f -o %o $(LIBS) |> build/misery.exe

@@ -1,36 +1,61 @@
+#include <iostream>
 #include <stdexcept>
 #include <glad/glad.h>
-#include <imgui.h>
-#include <imgui_impl_opengl3.h>
-#include <imgui_impl_glfw.h>
 #include "engine.hh"
 
 bool Engine::engine_started = false;
 
 Engine::Engine(Chassis& chassis)
-    : chassis{chassis},
-      shader{read_shader("res/shaders/shader1.vert"), read_shader("res/shaders/shader1.frag")} { }
+    : chassis{chassis}, mr{"res/shaders/model.vert", "res/shaders/model.frag"}, gui{*this} { }
 
-void Engine::run_loop() const {
-    glUseProgram(shader.id());
-
+void Engine::run_loop() {
     while (!glfwWindowShouldClose(chassis.get_window())) {
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // feed inputs to dear imgui, start new frame
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-        ImGui::Begin("Demo window");
-        ImGui::Button("Hello!");
-        ImGui::End();
-
-        // Render dear imgui into screen
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        mr.render();
+        gui.render();
 
         glfwSwapBuffers(chassis.get_window());
         glfwPollEvents();
     }
+}
+
+void Engine::load_model(std::string const& path) {
+    mr.load_model(path);
+}
+
+Engine::Gui::Gui(Engine& ngn)
+    : ngn{ngn} { }
+
+void Engine::Gui::render() {
+    render_model_info();
+}
+
+void Engine::Gui::render_model_info() {
+    // feed inputs to dear imgui, start new frame
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    ImGui::Begin("Models");
+
+    {
+        ImGui::InputText("Model Name", model_name_buf, 32);
+        if (ImGui::Button("Load Model")) {
+            try {
+                ngn.load_model(std::string("res/models/") + model_name_buf);
+            } catch (std::runtime_error& e) {
+                load_info = e.what();
+            }
+        }
+        if (!load_info.empty()) {
+            ImGui::Text(load_info.data());
+        }
+    }
+    
+    ImGui::End();
+
+    // Render dear imgui into screen
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }

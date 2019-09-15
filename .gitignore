@@ -4,9 +4,12 @@
 headers/GLFW/
 headers/glad/
 headers/KHR/
+headers/glm/
+headers/tiny_obj_loader.h
 libs/
 build/
 source/glad.c
+source/tiny_obj_loader.cc
 imgui/
 
 imgui.ini
