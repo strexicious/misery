@@ -8,12 +8,6 @@
 class Chassis {
 public:
     Chassis(int32_t width, int32_t height, ColorRGB color);
-    ~Chassis();
-
-    Chassis(Chassis const&) = delete;
-    Chassis& operator=(Chassis const&) = delete;
-    Chassis(Chassis&&);
-    Chassis& operator=(Chassis&&) = delete;
 
     GLFWwindow* get_window() const;
 
@@ -23,5 +17,5 @@ private:
 
     GLFWwindow* window;
 
-    static bool built, moving;
+    static bool built;
 };

@@ -6,7 +6,6 @@
 #include "chassis.hh"
 
 bool Chassis::built = false;
-bool Chassis::moving = false;
 
 Chassis::Chassis(int width, int height, ColorRGB color)
     : WIDTH{width}, HEIGHT{height} {
@@ -30,6 +29,8 @@ Chassis::Chassis(int width, int height, ColorRGB color)
     }
 
     glfwMakeContextCurrent(window);
+    glfwSetCursorPos(window, 0, 0);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     if (!gladLoadGL()) {
         glfwDestroyWindow(window);
@@ -53,20 +54,6 @@ Chassis::Chassis(int width, int height, ColorRGB color)
     built = true;
 }
 
-Chassis::Chassis(Chassis&& other)
-    : WIDTH{other.WIDTH}, HEIGHT{other.HEIGHT}, window{other.window} {
-    moving = true;
-}
-
 GLFWwindow* Chassis::get_window() const {
     return window;
-}
-
-Chassis::~Chassis() {
-    if (built && !moving) {
-        glfwDestroyWindow(window);
-        glfwTerminate();
-        built = false;
-    }
-    moving = false;
 }

@@ -16,11 +16,9 @@ ModelRenderer::ModelRenderer(std::string const& vpath, std::string const& fpath)
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0 * sizeof(GLfloat), (void*)(0 * sizeof(GLfloat)));
     glEnableVertexAttribArray(0);
 
-    glm::mat4 view = glm::lookAt(glm::vec3{0.f, 0.f, 0.f}, glm::vec3{0.f, 0.f, -1.f}, glm::vec3{0.f, 1.f, 0.f});
     glm::mat4 proj = glm::perspective(glm::radians(90.f), 1.77f, 1.f, 100.f);
 
-    glUseProgram(sprogram.id());
-    glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(view));
+    update_view();
     glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(proj));
 }
 
@@ -47,10 +45,15 @@ void ModelRenderer::load_model(std::string const& path) {
         
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, vertices.size() * 3, vertices.data(), GL_STATIC_DRAW);
-        loaded_path = path;
     } else {
         throw std::runtime_error("Failed to load model: " + path);
     }
+}
+
+void ModelRenderer::update_view() {
+    glUseProgram(sprogram.id());
+    glm::mat4 view = cam.view();
+    glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(view));
 }
 
 void ModelRenderer::render() const {
@@ -61,6 +64,23 @@ void ModelRenderer::render() const {
     }
 }
 
-std::string ModelRenderer::loaded_model() const {
-    return loaded_path;
+void ModelRenderer::handle_key_input(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    ModelRenderer* curmr = static_cast<ModelRenderer*>(glfwGetWindowUserPointer(window));
+    
+    if (key == GLFW_KEY_W && action == GLFW_PRESS) {
+        curmr->cam.move(Camera::MoveDir::forward);
+        curmr->update_view();
+    }
+
+    if (key == GLFW_KEY_S && action == GLFW_PRESS) {
+        curmr->cam.move(Camera::MoveDir::backward);
+        curmr->update_view();
+    }
+}
+
+void ModelRenderer::handle_mouse_input(GLFWwindow* window, double xpos, double ypos) {
+    ModelRenderer* curmr = static_cast<ModelRenderer*>(glfwGetWindowUserPointer(window));
+
+    curmr->cam.set_angles(xpos, ypos);
+    curmr->update_view();
 }

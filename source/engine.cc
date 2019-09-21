@@ -6,7 +6,11 @@
 bool Engine::engine_started = false;
 
 Engine::Engine(Chassis& chassis)
-    : chassis{chassis}, mr{"res/shaders/model.vert", "res/shaders/model.frag"}, gui{*this} { }
+    : chassis{chassis}, mr{"res/shaders/model.vert", "res/shaders/model.frag"}, gui{*this} {
+    glfwSetWindowUserPointer(chassis.get_window(), &mr);
+    glfwSetKeyCallback(chassis.get_window(), mr.handle_key_input);
+    glfwSetCursorPosCallback(chassis.get_window(), mr.handle_mouse_input);
+}
 
 void Engine::run_loop() {
     while (!glfwWindowShouldClose(chassis.get_window())) {
