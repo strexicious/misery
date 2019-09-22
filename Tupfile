@@ -1,6 +1,14 @@
 CXX = g++
 CFLAGS += -std=c++17 -Wall -Iheaders/ -Iimgui/
-LIBS = -Llibs/ -lglfw3 -lgdi32 -lopengl32 -limgui
+
+# libs dependencies
+ifeq (@(TUP_PLATFORM),win32)
+  LIBS = -Llibs/ -lglfw3 -lgdi32 -lopengl32 -limgui
+endif
+
+ifeq (@(TUP_PLATFORM),linux)
+  LIBS = -Llibs/ -lpthread -lglfw3 -lX11 -lglapi -ldl -limgui
+endif
 
 # imgui
 : foreach imgui/*.cpp |> $(CXX) $(CFLAGS) -DIMGUI_IMPL_OPENGL_LOADER_GLAD -c %f -o %o |> imgui/%B.o
