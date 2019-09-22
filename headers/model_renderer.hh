@@ -15,6 +15,7 @@ public:
 
     void load_model(std::string const& path);
     void update_view();
+    void update_proj();
     
     void handle_movement(int key);
     void handle_movement(double xpos, double ypos);

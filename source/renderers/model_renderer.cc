@@ -16,10 +16,8 @@ ModelRenderer::ModelRenderer(std::string const& vpath, std::string const& fpath)
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0 * sizeof(GLfloat), (void*)(0 * sizeof(GLfloat)));
     glEnableVertexAttribArray(0);
 
-    glm::mat4 proj = glm::perspective(glm::radians(90.f), 1.77f, .1f, 1000.f);
-
     update_view();
-    glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(proj));
+    update_proj();
 }
 
 void ModelRenderer::load_model(std::string const& path) {
@@ -53,14 +51,26 @@ void ModelRenderer::load_model(std::string const& path) {
 void ModelRenderer::update_view() {
     glUseProgram(sprogram.id());
     glm::mat4 view = cam.view();
-    glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(view));
+    GLuint loc = glGetUniformLocation(sprogram.id(), "view");
+    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(view));
+}
+
+void ModelRenderer::update_proj() {
+    glUseProgram(sprogram.id());
+    glm::mat4 proj = glm::perspective(glm::radians(90.f), 1.77f, 0.1f, 100.f);
+    GLuint loc = glGetUniformLocation(sprogram.id(), "proj");
+    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(proj));
 }
 
 void ModelRenderer::render() const {
     if (v_count) {
+        glEnable(GL_DEPTH_TEST);
+        
         glBindVertexArray(vao);
         glUseProgram(sprogram.id());
         glDrawArrays(GL_TRIANGLES, 0, v_count);
+
+        glDisable(GL_DEPTH_TEST);
     }
 }
 

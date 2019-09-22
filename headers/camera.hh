@@ -21,6 +21,6 @@ public:
 private:
     GLfloat move_speed = 0.1f;
 
-    glm::vec3 forward{0.0, 0.0, -1.0};
-    glm::vec3 pos{0.0};
+    glm::vec3 forward{0.0f, 0.0f, -1.0f};
+    glm::vec3 pos{0.0f, 0.0f, 5.0f};
 };
