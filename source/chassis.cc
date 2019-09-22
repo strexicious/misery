@@ -29,9 +29,7 @@ Chassis::Chassis(int width, int height, ColorRGB color)
     }
 
     glfwMakeContextCurrent(window);
-    glfwSetCursorPos(window, 0, 0);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
+    
     if (!gladLoadGL()) {
         glfwDestroyWindow(window);
         glfwTerminate();

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <stdexcept>
+#include <functional>
 #include <glad/glad.h>
 #include "engine.hh"
 
@@ -7,9 +8,28 @@ bool Engine::engine_started = false;
 
 Engine::Engine(Chassis& chassis)
     : chassis{chassis}, mr{"res/shaders/model.vert", "res/shaders/model.frag"}, gui{*this} {
-    glfwSetWindowUserPointer(chassis.get_window(), &mr);
-    glfwSetKeyCallback(chassis.get_window(), mr.handle_key_input);
-    glfwSetCursorPosCallback(chassis.get_window(), mr.handle_mouse_input);
+    glfwSetWindowUserPointer(chassis.get_window(), &ih);
+    glfwSetKeyCallback(chassis.get_window(), &InputHandler::glfw_keyboard_handler);
+    glfwSetCursorPosCallback(chassis.get_window(), &InputHandler::glfw_mouse_handler);
+
+    ih.set_press_handler("engine_exploration", std::function<void(int)>(
+        [this](int key) {
+            if (key == GLFW_KEY_ESCAPE) {
+                set_exploration_mode(!exploring);
+            }
+        }
+    ));
+
+    ih.set_long_press_handler("mr_navigation", std::function<void(int)>(
+        [this](int key) { mr.handle_movement(key); }
+    ));
+
+    ih.set_mouse_handler("mr_navigation", std::function<void(double, double)>(
+        [this](double xpos, double ypos) { mr.handle_movement(xpos, ypos); }
+    ));
+
+    ih.long_press_handler_enabled("mr_navigation", false);
+    ih.mouse_handler_enabled("mr_navigation", false);
 }
 
 void Engine::run_loop() {
@@ -17,7 +37,9 @@ void Engine::run_loop() {
         glClear(GL_COLOR_BUFFER_BIT);
 
         mr.render();
-        gui.render();
+        if (!exploring) {
+            gui.render();
+        }
 
         glfwSwapBuffers(chassis.get_window());
         glfwPollEvents();
@@ -26,6 +48,23 @@ void Engine::run_loop() {
 
 void Engine::load_model(std::string const& path) {
     mr.load_model(path);
+}
+
+void Engine::set_exploration_mode(bool exploration_mode) {
+    exploring = exploration_mode;
+    
+    if (exploration_mode) {
+        glfwSetCursorPos(chassis.get_window(), 0, 0);
+        glfwSetInputMode(chassis.get_window(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        
+        ih.long_press_handler_enabled("mr_navigation", true);
+        ih.mouse_handler_enabled("mr_navigation", true);
+    } else {
+        glfwSetInputMode(chassis.get_window(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);        
+
+        ih.long_press_handler_enabled("mr_navigation", false);
+        ih.mouse_handler_enabled("mr_navigation", false);
+    }
 }
 
 Engine::Gui::Gui(Engine& ngn)

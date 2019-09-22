@@ -16,8 +16,8 @@ public:
     void load_model(std::string const& path);
     void update_view();
     
-    static void handle_key_input(GLFWwindow* window, int key, int scancode, int action, int mods);
-    static void handle_mouse_input(GLFWwindow* window, double xpos, double ypos);
+    void handle_movement(int key);
+    void handle_movement(double xpos, double ypos);
 
 private:
     tinyobj::attrib_t attrib;

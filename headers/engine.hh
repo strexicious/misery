@@ -9,6 +9,7 @@
 #include "chassis.hh"
 #include "shader.hh"
 #include "model_renderer.hh"
+#include "input_handler.hh"
 
 class Engine {
 private:
@@ -37,6 +38,11 @@ private:
     Chassis& chassis;
     ModelRenderer mr;
     Gui gui;
+    InputHandler ih;
+
+    bool exploring = false;
+
+    void set_exploration_mode(bool);
 
     static bool engine_started;
 };
