@@ -55,3 +55,10 @@ Chassis::Chassis(int width, int height, ColorRGB color)
 GLFWwindow* Chassis::get_window() const {
     return window;
 }
+
+Chassis::~Chassis() {
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    
+    built = false;
+}

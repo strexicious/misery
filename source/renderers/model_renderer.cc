@@ -90,3 +90,8 @@ void ModelRenderer::handle_movement(double xpos, double ypos) {
     cam.set_angles(xpos, ypos);
     update_view();
 }
+
+ModelRenderer::~ModelRenderer() {
+    glDeleteBuffers(1, &vbo);
+    glDeleteVertexArrays(1, &vao);
+}

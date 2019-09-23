@@ -10,6 +10,7 @@
 class ModelRenderer {
 public:
     ModelRenderer(std::string const& vpath, std::string const& fpath);
+    ~ModelRenderer();
 
     void render() const;
 

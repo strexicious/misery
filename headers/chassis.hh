@@ -8,6 +8,7 @@
 class Chassis {
 public:
     Chassis(int32_t width, int32_t height, ColorRGB color);
+    ~Chassis();
 
     GLFWwindow* get_window() const;
 
