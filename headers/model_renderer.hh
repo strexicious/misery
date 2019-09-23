@@ -17,8 +17,8 @@ public:
     void update_view();
     void update_proj();
     
-    void handle_movement(int key);
-    void handle_movement(double xpos, double ypos);
+    void handle_movement(int key); // keyboard
+    void handle_movement(double xpos, double ypos); // mouse
 
 private:
     tinyobj::attrib_t attrib;

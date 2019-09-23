@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <glm/ext/matrix_transform.hpp>
 #include "camera.hh"
 
@@ -5,11 +6,11 @@ void Camera::move(Camera::MoveDir md) {
     pos += forward * move_speed * static_cast<float>(md);
 }
 
-void Camera::set_move_speed(GLfloat ms) {
+void Camera::set_move_speed(float ms) {
     move_speed = ms;
 }
 
-void Camera::set_angles(GLfloat x, GLfloat y) {
+void Camera::set_angles(float x, float y) {
     GLfloat cosX = glm::cos(glm::radians(x));
     GLfloat sinX = glm::sin(glm::radians(x));
     GLfloat cosY = glm::cos(glm::radians(y));

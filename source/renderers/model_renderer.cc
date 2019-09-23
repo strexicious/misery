@@ -10,7 +10,7 @@ ModelRenderer::ModelRenderer(std::string const& vpath, std::string const& fpath)
     : sprogram{read_shader(vpath), read_shader(fpath)} {
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        
+
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0 * sizeof(GLfloat), (void*)(0 * sizeof(GLfloat)));
@@ -39,10 +39,10 @@ void ModelRenderer::load_model(std::string const& path) {
             vertices.push_back(attrib.vertices[3*i.vertex_index+1]);
             vertices.push_back(attrib.vertices[3*i.vertex_index+2]);
         }
-        v_count = vertices.size();
+        v_count = vertices.size() / 3;
         
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * 3, vertices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
     } else {
         throw std::runtime_error("Failed to load model: " + path);
     }
