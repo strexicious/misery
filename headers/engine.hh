@@ -23,8 +23,9 @@ private:
         Engine& ngn;
 
         // Model
-        char model_name_buf[32] = "";
+        char model_name_buf[32] = "Transport Shuttle_obj.obj";
         std::string load_info;
+        
         void render_model_info();
     };
     
@@ -41,6 +42,7 @@ private:
     InputHandler ih;
 
     bool exploring = false;
+    double delta_time = 0.0;
 
     void set_exploration_mode(bool);
 

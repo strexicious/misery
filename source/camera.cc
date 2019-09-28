@@ -11,6 +11,9 @@ void Camera::set_move_speed(float ms) {
 }
 
 void Camera::set_angles(float x, float y) {
+    x *= move_speed;
+    y *= move_speed;
+    
     GLfloat cosX = glm::cos(glm::radians(x));
     GLfloat sinX = glm::sin(glm::radians(x));
     GLfloat cosY = glm::cos(glm::radians(y));

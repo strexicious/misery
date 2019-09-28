@@ -5,7 +5,9 @@ headers/GLFW/
 headers/glad/
 headers/KHR/
 headers/glm/
-headers/tiny_obj_loader.h
+headers/assimp/
+
+res/models/
 libs/
 build/
 source/glad.c

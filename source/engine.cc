@@ -33,8 +33,14 @@ Engine::Engine(Chassis& chassis)
 }
 
 void Engine::run_loop() {
+    double last_time = glfwGetTime();
+    delta_time = last_time;
     while (!glfwWindowShouldClose(chassis.get_window())) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        double now = glfwGetTime();
+        delta_time = now - last_time;
+        last_time = now;
 
         mr.render();
         if (!exploring) {
@@ -81,7 +87,6 @@ void Engine::Gui::render_model_info() {
     ImGui::NewFrame();
 
     ImGui::Begin("Models");
-
     {
         ImGui::InputText("Model Name", model_name_buf, 32);
         if (ImGui::Button("Load Model")) {
@@ -95,7 +100,12 @@ void Engine::Gui::render_model_info() {
             ImGui::Text(load_info.data());
         }
     }
-    
+    ImGui::End();
+
+    ImGui::Begin("Debug Info");
+    {
+        ImGui::Text(("FPS: " + std::to_string(1/ngn.delta_time)).data());
+    }
     ImGui::End();
 
     // Render dear imgui into screen

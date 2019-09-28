@@ -3,11 +3,11 @@ CFLAGS += -std=c++17 -Wall -Iheaders/ -Iimgui/
 
 # libs dependencies
 ifeq (@(TUP_PLATFORM),win32)
-  LIBS = -Llibs/ -lglfw3 -lgdi32 -lopengl32 -limgui
+  LIBS = -Llibs/ -lglfw3 -lgdi32 -lopengl32 -limgui -lzlibstatic -lassimp
 endif
 
 ifeq (@(TUP_PLATFORM),linux)
-  LIBS = -Llibs/ -lpthread -lglfw3 -lX11 -lglapi -ldl -limgui
+  LIBS = -Llibs/ -lpthread -lglfw3 -lX11 -lglapi -ldl -limgui -lassimp
 endif
 
 # imgui

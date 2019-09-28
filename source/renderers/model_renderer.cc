@@ -1,21 +1,15 @@
 #include <iostream>
 #include <vector>
 #include <glad/glad.h>
-#include <tiny_obj_loader.h>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 #include "model_renderer.hh"
 
 ModelRenderer::ModelRenderer(std::string const& vpath, std::string const& fpath)
     : sprogram{read_shader(vpath), read_shader(fpath)} {
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0 * sizeof(GLfloat), (void*)(0 * sizeof(GLfloat)));
-    glEnableVertexAttribArray(0);
-
     update_view();
     update_proj();
 }
@@ -24,25 +18,36 @@ void ModelRenderer::load_model(std::string const& path) {
     std::string warn;
     std::string err;
     
-    if(tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.c_str())) {
-        if (!warn.empty()) {
-            std::cout << warn << std::endl;
-        }
+    Assimp::Importer importer;
+    const aiScene* scene = importer.ReadFile(path,
+        aiProcess_Triangulate |
+        aiProcess_JoinIdenticalVertices
+    );
+    
+    models.clear();
+    if (scene) {
+        std::vector<GLfloat> attribs_data;
+        std::vector<GLuint> indices_data;
 
-        if (!err.empty()) {
-            std::cerr << err << std::endl;
+        for (unsigned i = 0; i < scene->mNumMeshes; ++i) {
+            const aiMesh* pMesh = scene->mMeshes[i];
+            
+            attribs_data.resize(pMesh->mNumVertices * 3);
+            for (unsigned j = 0; j < pMesh->mNumVertices; ++j) {
+                attribs_data[3*j+0] = pMesh->mVertices[j].x;
+                attribs_data[3*j+1] = pMesh->mVertices[j].y;
+                attribs_data[3*j+2] = pMesh->mVertices[j].z;
+            }
+
+            indices_data.resize(pMesh->mNumFaces * 3);
+            for (unsigned j = 0; j < pMesh->mNumFaces; ++j) {
+                indices_data[3*j+0] = pMesh->mFaces[j].mIndices[0];
+                indices_data[3*j+1] = pMesh->mFaces[j].mIndices[1];
+                indices_data[3*j+2] = pMesh->mFaces[j].mIndices[2];
+            }
+
+            models.emplace_back(attribs_data, indices_data);
         }
-        
-        std::vector<GLfloat> vertices;
-        for (auto& i : shapes[0].mesh.indices) {
-            vertices.push_back(attrib.vertices[3*i.vertex_index+0]);
-            vertices.push_back(attrib.vertices[3*i.vertex_index+1]);
-            vertices.push_back(attrib.vertices[3*i.vertex_index+2]);
-        }
-        v_count = vertices.size() / 3;
-        
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
     } else {
         throw std::runtime_error("Failed to load model: " + path);
     }
@@ -62,16 +67,15 @@ void ModelRenderer::update_proj() {
     glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(proj));
 }
 
-void ModelRenderer::render() const {
-    if (v_count) {
-        glEnable(GL_DEPTH_TEST);
-        
-        glBindVertexArray(vao);
-        glUseProgram(sprogram.id());
-        glDrawArrays(GL_TRIANGLES, 0, v_count);
+void ModelRenderer::render() {
+    glEnable(GL_DEPTH_TEST);
+    glUseProgram(sprogram.id());
 
-        glDisable(GL_DEPTH_TEST);
+    for (auto& m : models) {
+        m.draw();
     }
+    
+    glDisable(GL_DEPTH_TEST);
 }
 
 void ModelRenderer::handle_movement(int key) {
@@ -89,9 +93,4 @@ void ModelRenderer::handle_movement(int key) {
 void ModelRenderer::handle_movement(double xpos, double ypos) {
     cam.set_angles(xpos, ypos);
     update_view();
-}
-
-ModelRenderer::~ModelRenderer() {
-    glDeleteBuffers(1, &vbo);
-    glDeleteVertexArrays(1, &vao);
 }
