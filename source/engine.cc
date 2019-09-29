@@ -1,10 +1,27 @@
 #include <iostream>
 #include <stdexcept>
 #include <functional>
+#include <boost/filesystem.hpp>
 #include <glad/glad.h>
 #include "engine.hh"
 
+using namespace boost::filesystem;
+
 bool Engine::engine_started = false;
+std::vector<std::string> Engine::model_names{};
+
+void load_model_names(std::vector<std::string>& v) {
+    if (v.empty()) {
+        directory_iterator di("res/models/");
+        // empty argument constructor means end
+        while (di != directory_iterator()) {
+            if (di->path().extension() == ".obj") {
+                v.push_back(di->path().filename().string());
+            }
+            ++di;
+        }
+    }
+}
 
 Engine::Engine(Chassis& chassis)
     : chassis{chassis}, gui{*this} {
@@ -45,6 +62,8 @@ Engine::Engine(Chassis& chassis)
 
     ih.long_press_handler_enabled("mr_navigation", false);
     ih.mouse_handler_enabled("mr_navigation", false);
+
+    load_model_names(model_names);
 }
 
 void Engine::run_loop() {
@@ -103,14 +122,22 @@ void Engine::Gui::render_model_info() {
 
     ImGui::Begin("Models");
     {
-        ImGui::InputText("Model Name", model_name_buf, 32);
-        if (ImGui::Button("Load Model")) {
+        ImGui::ListBoxHeader("Models");
+        for (unsigned i = 0; i < model_names.size(); ++i) {
+            if (ImGui::Selectable(model_names[i].c_str(), selected == static_cast<int>(i))) {
+                selected = static_cast<int>(i);
+            }
+        }
+        ImGui::ListBoxFooter();
+
+        if (selected != -1 && ImGui::Button("Load Model")) {
             try {
-                ngn.load_model(std::string("res/models/") + model_name_buf);
+                ngn.load_model("res/models/" + model_names[selected]);
             } catch (std::runtime_error& e) {
                 load_info = e.what();
             }
         }
+        
         if (!load_info.empty()) {
             ImGui::Text(load_info.data());
         }

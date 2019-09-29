@@ -1,6 +1,7 @@
 .vscode/
 .tup/
 
+headers/boost/
 headers/GLFW/
 headers/glad/
 headers/KHR/

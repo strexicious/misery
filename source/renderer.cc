@@ -152,8 +152,6 @@ void TexturedRenderer::load_model(std::string const& path) {
             aiString path;
             if (pMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &path, nullptr, nullptr, nullptr, nullptr, nullptr) == AI_SUCCESS) {
                 models.emplace_back(attribs_data, indices_data, "res/models/" + std::string{path.data});
-            } else {
-                throw std::runtime_error("Failed to load diffuse texture for mesh " + std::to_string(i));
             }
         }
     } else {

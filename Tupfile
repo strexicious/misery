@@ -1,13 +1,15 @@
 CXX = g++
 CFLAGS += -std=c++17 -Wall -Iheaders/ -Iimgui/
+LIBS = -Llibs/
 
-# libs dependencies
 ifeq (@(TUP_PLATFORM),win32)
-  LIBS = -Llibs/ -lglfw3 -lgdi32 -lopengl32 -limgui -lzlibstatic -lassimp
+  LIBS += -lglfw3 -lgdi32 -lopengl32 -limgui -lzlibstatic -lassimp
+  LIBS += -LC:/shared_data/programs/boost-cpp/lib
+  LIBS += -lboost_filesystem-mgw81-mt-d-x64-1_71
 endif
 
 ifeq (@(TUP_PLATFORM),linux)
-  LIBS = -Llibs/ -lpthread -lglfw3 -lX11 -lglapi -ldl -limgui -lassimp
+  LIBS += -lpthread -lglfw3 -lX11 -lglapi -ldl -limgui -lassimp
 endif
 
 # imgui

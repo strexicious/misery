@@ -13,6 +13,7 @@
 
 class Engine {
 private:
+
     class Gui {
     public:
         Gui(Engine& ngn);
@@ -22,20 +23,21 @@ private:
     private:
         Engine& ngn;
 
-        // Model
-        char model_name_buf[32] = "Transport Shuttle_obj.obj";
         std::string load_info;
+        int selected = -1;
         
         void render_model_info();
     };
     
 public:
+
     Engine(Chassis& chassis);
 
     void run_loop();
     void load_model(std::string const&);
 
 private:
+
     Chassis& chassis;
     Camera cam;
     TexturedRenderer mr;
@@ -48,4 +50,6 @@ private:
     void set_exploration_mode(bool);
 
     static bool engine_started;
+    static std::vector<std::string> model_names;
+
 };
