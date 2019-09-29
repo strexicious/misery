@@ -1,5 +1,5 @@
 #include <stdexcept>
-#include <glad/glad.h>
+#include <iostream>
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_glfw.h>
@@ -38,12 +38,8 @@ Chassis::Chassis(int width, int height, ColorRGB color)
 
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+    glDebugMessageCallback(dbgCallback, nullptr);
     glClearColor(color.r, color.g, color.b, 1.0f);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -66,4 +62,18 @@ Chassis::~Chassis() {
     glfwTerminate();
     
     built = false;
+}
+
+void Chassis::dbgCallback(
+    GLenum source,
+    GLenum type,
+    GLuint id,
+    GLenum severity,
+    GLsizei length,
+    const GLchar* message,
+    const void* userParam
+) {
+    if (type == GL_DEBUG_TYPE_ERROR) {
+        std::cerr << "[ OpenGL ] " << message << std::endl;
+    }
 }

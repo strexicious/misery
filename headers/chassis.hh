@@ -2,6 +2,7 @@
 
 #define GLFW_INCLUDE_NONE
 #include <cstdint>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "color.hh"
 
@@ -19,4 +20,7 @@ private:
     GLFWwindow* window;
 
     static bool built;
+
+    static void dbgCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
+        const GLchar *message, const void *userParam);
 };
