@@ -6,6 +6,7 @@ headers/glad/
 headers/KHR/
 headers/glm/
 headers/assimp/
+headers/stb_image.h
 
 res/models/
 libs/
