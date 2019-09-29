@@ -8,7 +8,7 @@
 #include <imgui_impl_glfw.h>
 #include "chassis.hh"
 #include "shader.hh"
-#include "model_renderer.hh"
+#include "renderer.hh"
 #include "input_handler.hh"
 
 class Engine {
@@ -37,7 +37,8 @@ public:
 
 private:
     Chassis& chassis;
-    ModelRenderer mr;
+    Camera cam;
+    TexturedRenderer mr;
     Gui gui;
     InputHandler ih;
 

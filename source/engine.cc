@@ -7,10 +7,12 @@
 bool Engine::engine_started = false;
 
 Engine::Engine(Chassis& chassis)
-    : chassis{chassis}, mr{"res/shaders/model.vert", "res/shaders/model.frag"}, gui{*this} {
+    : chassis{chassis}, gui{*this} {
     glfwSetWindowUserPointer(chassis.get_window(), &ih);
     glfwSetKeyCallback(chassis.get_window(), &InputHandler::glfw_keyboard_handler);
     glfwSetCursorPosCallback(chassis.get_window(), &InputHandler::glfw_mouse_handler);
+
+    mr.update_view(cam);
 
     ih.set_press_handler("engine_exploration", std::function<void(int)>(
         [this](int key) {
@@ -21,11 +23,24 @@ Engine::Engine(Chassis& chassis)
     ));
 
     ih.set_long_press_handler("mr_navigation", std::function<void(int)>(
-        [this](int key) { mr.handle_movement(key); }
+        [this](int key) {
+            if (key == GLFW_KEY_W) {
+                cam.move(Camera::MoveDir::forward);
+                mr.update_view(cam);
+            }
+
+            if (key == GLFW_KEY_S) {
+                cam.move(Camera::MoveDir::backward);
+                mr.update_view(cam);
+            }
+        }
     ));
 
     ih.set_mouse_handler("mr_navigation", std::function<void(double, double)>(
-        [this](double xpos, double ypos) { mr.handle_movement(xpos, ypos); }
+        [this](double xpos, double ypos) {
+            cam.set_angles(xpos, ypos);
+            mr.update_view(cam);
+        }
     ));
 
     ih.long_press_handler_enabled("mr_navigation", false);

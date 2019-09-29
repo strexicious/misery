@@ -1,3 +1,6 @@
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+#include <iostream>
 #include "mesh.hh"
 
 Mesh::Mesh(std::vector<GLfloat> const& attribs, std::vector<GLuint> const& indices)
@@ -33,4 +36,42 @@ Mesh::~Mesh() {
     glDeleteBuffers(1, &ebo);
     glDeleteBuffers(1, &vbo);
     glDeleteVertexArrays(1, &vao);
+}
+
+TexturedMesh::TexturedMesh(
+    std::vector<GLfloat> const& attribs,
+    std::vector<GLuint> const& indices,
+    std::string const& path
+) : Mesh{attribs, indices} {
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBindVertexArray(vao);
+    
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(0 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(1);
+
+    unsigned char* data = stbi_load(path.c_str(), &width, &height, &comps, 0);
+
+    if (!data) {
+        throw std::runtime_error("Failed to load texture: " + path);
+    }
+    
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+}
+
+TexturedMesh::TexturedMesh(TexturedMesh&& other)
+    : Mesh{std::move(other)}, texture{other.texture} {
+    other.texture = 0;
+}
+
+void TexturedMesh::draw() {
+    glBindTexture(GL_TEXTURE_2D, texture);
+    Mesh::draw();
+}
+
+TexturedMesh::~TexturedMesh() {
+    glDeleteTextures(1, &texture);
 }
