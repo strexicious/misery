@@ -4,6 +4,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <assimp/scene.h>
+#include <glm/glm.hpp>
+#include <glm/ext.hpp>
 #include "mesh.hh"
 #include "shader.hh"
 #include "camera.hh"
@@ -21,34 +23,64 @@ protected:
 
 };
 
-class ModelRenderer : public Renderer {
+template <typename T>
+class MeshRenderer : public Renderer {
 public:
 
-    ModelRenderer();
+    MeshRenderer(std::string const& vpath, std::string const& fpath);
 
     void render() override;
-    void load_model(std::string const&);
+    void add_mesh(T m);
     void update_view(Camera&);
 
 private:
 
-    std::vector<Mesh> models;
+    std::vector<T> models;
+};
+
+class ColoredRenderer : public MeshRenderer<Mesh> {
+public:
+
+    ColoredRenderer();
     
 };
 
-class TexturedRenderer : public Renderer {
+class TexturedRenderer : public MeshRenderer<TexturedMesh> {
 public:
 
     TexturedRenderer();
 
-    void render() override;
-    void load_model(std::string const&);
-    void update_view(Camera&);
-
-private:
-
-    std::vector<TexturedMesh> models;
-
-    aiScene const* scene = nullptr;
-
 };
+
+// ====================================================================
+// :::::::::::::  MeshRenderer Templated Implementations  :::::::::::::
+// ====================================================================
+
+template<typename T>
+MeshRenderer<T>::MeshRenderer(std::string const& vpath, std::string const& fpath)
+    : Renderer{vpath, fpath} { }
+
+template<typename T>
+void MeshRenderer<T>::render() {
+    glEnable(GL_DEPTH_TEST);
+    glUseProgram(sprogram.id());
+
+    for (auto& m : models) {
+        m.draw();
+    }
+    
+    glDisable(GL_DEPTH_TEST);
+}
+
+template<typename T>
+void MeshRenderer<T>::add_mesh(T m) {
+    models.push_back(std::move(m));
+}
+
+template<typename T>
+void MeshRenderer<T>::update_view(Camera& cam) {
+    glUseProgram(sprogram.id());
+    glm::mat4 view = cam.view();
+    GLuint loc = glGetUniformLocation(sprogram.id(), "view");
+    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(view));
+}

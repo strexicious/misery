@@ -2,6 +2,9 @@
 #include <stdexcept>
 #include <functional>
 #include <boost/filesystem.hpp>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 #include <glad/glad.h>
 #include "engine.hh"
 
@@ -29,7 +32,7 @@ Engine::Engine(Chassis& chassis)
     glfwSetKeyCallback(chassis.get_window(), &InputHandler::glfw_keyboard_handler);
     glfwSetCursorPosCallback(chassis.get_window(), &InputHandler::glfw_mouse_handler);
 
-    mr.update_view(cam);
+    update_view();
 
     ih.set_press_handler("engine_exploration", std::function<void(int)>(
         [this](int key) {
@@ -43,12 +46,12 @@ Engine::Engine(Chassis& chassis)
         [this](int key) {
             if (key == GLFW_KEY_W) {
                 cam.move(Camera::MoveDir::forward);
-                mr.update_view(cam);
+                update_view();
             }
 
             if (key == GLFW_KEY_S) {
                 cam.move(Camera::MoveDir::backward);
-                mr.update_view(cam);
+                update_view();
             }
         }
     ));
@@ -56,7 +59,7 @@ Engine::Engine(Chassis& chassis)
     ih.set_mouse_handler("mr_navigation", std::function<void(double, double)>(
         [this](double xpos, double ypos) {
             cam.set_angles(xpos, ypos);
-            mr.update_view(cam);
+            update_view();
         }
     ));
 
@@ -76,7 +79,8 @@ void Engine::run_loop() {
         delta_time = now - last_time;
         last_time = now;
 
-        mr.render();
+        cr.render();
+        tr.render();
         if (!exploring) {
             gui.render();
         }
@@ -86,8 +90,71 @@ void Engine::run_loop() {
     }
 }
 
-void Engine::load_model(std::string const& path) {
-    mr.load_model(path);
+void Engine::load_model(std::string const& path) {    
+    std::string warn;
+    std::string err;
+    
+    Assimp::Importer importer;
+    aiScene const* scene = importer.ReadFile(path,
+        aiProcess_Triangulate |
+        aiProcess_JoinIdenticalVertices |
+        aiProcess_FlipUVs
+    );
+
+    if (scene) {
+        std::vector<GLfloat> attribs_data;
+        std::vector<GLuint> indices_data;
+
+        for (unsigned i = 0; i < scene->mNumMeshes; ++i) {
+            const aiMesh* pMesh = scene->mMeshes[i];
+            
+            // should check for pMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0
+            // check if has a material (aka texture)
+            // AI_SCENE_FLAGS_INCOMPLETE which rejects the scene if it doesn't have materials
+            // if not set, assimp will fill the first, index 0, material by default, so we don't want that
+            bool has_texture = pMesh->mMaterialIndex < scene->mNumMaterials && pMesh->mMaterialIndex != 0;
+            
+            if (has_texture) {
+                attribs_data.resize(pMesh->mNumVertices * 5);
+                for (unsigned j = 0; j < pMesh->mNumVertices; ++j) {
+                    attribs_data[5*j+0] = pMesh->mVertices[j].x;
+                    attribs_data[5*j+1] = pMesh->mVertices[j].y;
+                    attribs_data[5*j+2] = pMesh->mVertices[j].z;
+                    
+                    attribs_data[5*j+3] = pMesh->mTextureCoords[0][j].x;
+                    attribs_data[5*j+4] = pMesh->mTextureCoords[0][j].y;
+                }
+            } else {
+                attribs_data.resize(pMesh->mNumVertices * 3);
+                for (unsigned j = 0; j < pMesh->mNumVertices; ++j) {
+                    attribs_data[3*j+0] = pMesh->mVertices[j].x;
+                    attribs_data[3*j+1] = pMesh->mVertices[j].y;
+                    attribs_data[3*j+2] = pMesh->mVertices[j].z;
+                }
+            }
+
+            indices_data.resize(pMesh->mNumFaces * 3);
+            for (unsigned j = 0; j < pMesh->mNumFaces; ++j) {
+                indices_data[3*j+0] = pMesh->mFaces[j].mIndices[0];
+                indices_data[3*j+1] = pMesh->mFaces[j].mIndices[1];
+                indices_data[3*j+2] = pMesh->mFaces[j].mIndices[2];
+            }
+            
+            if (has_texture) {
+                aiMaterial* pMaterial = scene->mMaterials[pMesh->mMaterialIndex];
+
+                aiString path;
+                if (pMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &path, nullptr, nullptr, nullptr, nullptr, nullptr) == AI_SUCCESS) {
+                    tr.add_mesh(TexturedMesh{attribs_data, indices_data, "res/models/" + std::string{path.data}});
+                }
+            } else {
+                cr.add_mesh(Mesh{attribs_data, indices_data});
+            }
+
+        }
+    } else {
+        throw std::runtime_error("Failed to load model: " + path);
+    }
 }
 
 void Engine::set_exploration_mode(bool exploration_mode) {
@@ -105,6 +172,11 @@ void Engine::set_exploration_mode(bool exploration_mode) {
         ih.long_press_handler_enabled("mr_navigation", false);
         ih.mouse_handler_enabled("mr_navigation", false);
     }
+}
+
+void Engine::update_view() {
+    cr.update_view(cam);
+    tr.update_view(cam);
 }
 
 Engine::Gui::Gui(Engine& ngn)

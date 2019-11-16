@@ -40,7 +40,8 @@ private:
 
     Chassis& chassis;
     Camera cam;
-    TexturedRenderer mr;
+    ColoredRenderer cr;
+    TexturedRenderer tr;
     Gui gui;
     InputHandler ih;
 
@@ -48,6 +49,7 @@ private:
     double delta_time = 0.0;
 
     void set_exploration_mode(bool);
+    void update_view();
 
     static bool engine_started;
     static std::vector<std::string> model_names;
