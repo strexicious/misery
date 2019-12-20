@@ -58,7 +58,11 @@ Engine::Engine(Chassis& chassis)
 
     ih.set_mouse_handler("mr_navigation", std::function<void(double, double)>(
         [this](double xpos, double ypos) {
-            cam.set_angles(xpos, ypos);
+            explo_mx -= last_mxpos - xpos;
+            explo_my -= last_mypos - ypos;
+            last_mxpos = xpos;
+            last_mypos = ypos;
+            cam.set_angles(explo_mx, explo_my);
             update_view();
         }
     ));
@@ -161,7 +165,7 @@ void Engine::set_exploration_mode(bool exploration_mode) {
     exploring = exploration_mode;
     
     if (exploration_mode) {
-        glfwSetCursorPos(chassis.get_window(), 0, 0);
+        glfwGetCursorPos(chassis.get_window(), &last_mxpos, &last_mypos);
         glfwSetInputMode(chassis.get_window(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         
         ih.long_press_handler_enabled("mr_navigation", true);
@@ -177,6 +181,10 @@ void Engine::set_exploration_mode(bool exploration_mode) {
 void Engine::update_view() {
     cr.update_view(cam);
     tr.update_view(cam);
+}
+
+void Engine::compute_click_pixels() {
+    
 }
 
 Engine::Gui::Gui(Engine& ngn)

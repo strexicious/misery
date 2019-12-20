@@ -40,8 +40,8 @@ private:
 
     Chassis& chassis;
     Camera cam;
-    ColoredRenderer cr;
-    TexturedRenderer tr;
+    MeshRenderer<Mesh> cr{"res/shaders/model.vert", "res/shaders/model.frag"};
+    MeshRenderer<TexturedMesh> tr{"res/shaders/textured.vert", "res/shaders/textured.frag"};
     Gui gui;
     InputHandler ih;
 
@@ -50,8 +50,12 @@ private:
 
     void set_exploration_mode(bool);
     void update_view();
+    void compute_click_pixels();
 
     static bool engine_started;
     static std::vector<std::string> model_names;
+    double explo_mx = 0.0;
+    double explo_my = 0.0;
+    double last_mxpos, last_mypos;
 
 };

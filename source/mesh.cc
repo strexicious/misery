@@ -32,6 +32,14 @@ void Mesh::draw() {
     glDrawElements(GL_TRIANGLES, i_count, GL_UNSIGNED_INT, (void*)(0));
 }
 
+void Mesh::translate(glm::vec3 dir, float units) {
+    model_transform = glm::translate(model_transform, units * dir);
+}
+
+glm::mat4 const& Mesh::get_transform() const {
+    return model_transform;
+}
+
 Mesh::~Mesh() {
     glDeleteBuffers(1, &ebo);
     glDeleteBuffers(1, &vbo);

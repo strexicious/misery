@@ -38,17 +38,20 @@ private:
     std::vector<T> models;
 };
 
-class ColoredRenderer : public MeshRenderer<Mesh> {
+class PickerRenderer : public Renderer {
 public:
 
-    ColoredRenderer();
-    
-};
+    PickerRenderer(unsigned width, unsigned height);
+    ~PickerRenderer();
 
-class TexturedRenderer : public MeshRenderer<TexturedMesh> {
-public:
+    void render() override;
+    unsigned get_mesh_id(unsigned x, unsigned y);
 
-    TexturedRenderer();
+private:
+
+    unsigned width, height;
+    GLuint fb_obj;
+    GLuint color_rbo, depth_rbo;
 
 };
 
@@ -58,7 +61,12 @@ public:
 
 template<typename T>
 MeshRenderer<T>::MeshRenderer(std::string const& vpath, std::string const& fpath)
-    : Renderer{vpath, fpath} { }
+    : Renderer{vpath, fpath} {
+    glUseProgram(sprogram.id());
+    glm::mat4 proj = glm::perspective(glm::radians(90.f), 1.77f, 0.1f, 100.f);
+    GLuint loc = glGetUniformLocation(sprogram.id(), "proj");
+    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(proj));
+}
 
 template<typename T>
 void MeshRenderer<T>::render() {
@@ -66,6 +74,9 @@ void MeshRenderer<T>::render() {
     glUseProgram(sprogram.id());
 
     for (auto& m : models) {
+        GLuint loc = glGetUniformLocation(sprogram.id(), "model");
+        glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(m.get_transform()));
+
         m.draw();
     }
     
