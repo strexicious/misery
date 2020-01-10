@@ -1,9 +1,9 @@
 #version 330 core
 
-out uint id_out;
+out vec2 info_out;
 
-uniform uint id;
+uniform uint obj_id;
 
 void main() {
-    id_out = id;
+    info_out = vec2(float(obj_id), float(gl_PrimitiveID + 1));
 }

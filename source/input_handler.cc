@@ -48,6 +48,14 @@ void InputHandler::glfw_mouse_handler(GLFWwindow* window, double xpos, double yp
     }
 }
 
+void InputHandler::glfw_mouse_click_handler(GLFWwindow* window, int button, int action, int mods) {
+    InputHandler* this_ih = static_cast<InputHandler*>(glfwGetWindowUserPointer(window));
+
+    for (auto& el : this_ih->mouse_clicks) {
+        if (el.second.active) el.second.h(button, action);
+    }
+}
+
 void InputHandler::set_press_handler(std::string const& hname, std::function<void(int)> h) {
     presses[hname] = KeyboardHandler { h };
 }
@@ -62,6 +70,10 @@ void InputHandler::set_release_handler(std::string const& hname, std::function<v
 
 void InputHandler::set_mouse_handler(std::string const& hname, std::function<void(double, double)> h) {
     mouse_handlers[hname] = MouseHandler { h };
+}
+
+void InputHandler::set_mouse_click_handler(std::string const& hname, std::function<void(int, int)> h) {
+    mouse_clicks[hname] = MouseClickHandler { h };
 }
 
 void InputHandler::press_handler_enabled(std::string const& hname, bool henabled) {
@@ -85,5 +97,11 @@ void InputHandler::release_handler_enabled(std::string const& hname, bool henabl
 void InputHandler::mouse_handler_enabled(std::string const& hname, bool henabled) {
     if (mouse_handlers.count(hname)) {
         mouse_handlers[hname].active = henabled;
+    }
+}
+
+void InputHandler::mouse_click_handler_enabled(std::string const& hname, bool henabled) {
+    if (mouse_clicks.count(hname)) {
+        mouse_clicks[hname].active = henabled;
     }
 }

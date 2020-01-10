@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+#include <optional>
 #include <string>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -16,6 +18,7 @@ public:
     Renderer(std::string const&, std::string const&);
 
     virtual void render() = 0;
+    void update_view(Camera&);
 
 protected:
 
@@ -23,19 +26,17 @@ protected:
 
 };
 
-template <typename T>
 class MeshRenderer : public Renderer {
 public:
 
     MeshRenderer(std::string const& vpath, std::string const& fpath);
 
     void render() override;
-    void add_mesh(T m);
-    void update_view(Camera&);
+    void add_mesh(std::shared_ptr<Mesh> p_m);
 
 private:
 
-    std::vector<T> models;
+    std::vector<std::shared_ptr<Mesh>> p_models;
 };
 
 class PickerRenderer : public Renderer {
@@ -45,7 +46,8 @@ public:
     ~PickerRenderer();
 
     void render() override;
-    unsigned get_mesh_id(unsigned x, unsigned y);
+    void add_mesh(std::shared_ptr<Mesh> p_m);
+    std::optional<unsigned> get_mesh_id(unsigned x, unsigned y);
 
 private:
 
@@ -53,45 +55,6 @@ private:
     GLuint fb_obj;
     GLuint color_rbo, depth_rbo;
 
-};
-
-// ====================================================================
-// :::::::::::::  MeshRenderer Templated Implementations  :::::::::::::
-// ====================================================================
-
-template<typename T>
-MeshRenderer<T>::MeshRenderer(std::string const& vpath, std::string const& fpath)
-    : Renderer{vpath, fpath} {
-    glUseProgram(sprogram.id());
-    glm::mat4 proj = glm::perspective(glm::radians(90.f), 1.77f, 0.1f, 100.f);
-    GLuint loc = glGetUniformLocation(sprogram.id(), "proj");
-    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(proj));
-}
-
-template<typename T>
-void MeshRenderer<T>::render() {
-    glEnable(GL_DEPTH_TEST);
-    glUseProgram(sprogram.id());
-
-    for (auto& m : models) {
-        GLuint loc = glGetUniformLocation(sprogram.id(), "model");
-        glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(m.get_transform()));
-
-        m.draw();
-    }
+    std::vector<std::shared_ptr<Mesh>> p_models;
     
-    glDisable(GL_DEPTH_TEST);
-}
-
-template<typename T>
-void MeshRenderer<T>::add_mesh(T m) {
-    models.push_back(std::move(m));
-}
-
-template<typename T>
-void MeshRenderer<T>::update_view(Camera& cam) {
-    glUseProgram(sprogram.id());
-    glm::mat4 view = cam.view();
-    GLuint loc = glGetUniformLocation(sprogram.id(), "view");
-    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(view));
-}
+};

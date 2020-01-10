@@ -14,7 +14,40 @@
 // =============================================
 
 Renderer::Renderer(std::string const& vpath, std::string const& fpath)
-    : sprogram{read_shader(vpath), read_shader(fpath)} { }
+    : sprogram{read_shader(vpath), read_shader(fpath)} {
+    glUseProgram(sprogram.id());
+    glm::mat4 proj = glm::perspective(glm::radians(90.f), 1.77f, 0.1f, 100.f);
+    GLuint loc = glGetUniformLocation(sprogram.id(), "proj");
+    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(proj));
+}
+
+void Renderer::update_view(Camera& cam) {
+    glUseProgram(sprogram.id());
+    glm::mat4 view = cam.view();
+    GLuint loc = glGetUniformLocation(sprogram.id(), "view");
+    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(view));
+}
+
+MeshRenderer::MeshRenderer(std::string const& vpath, std::string const& fpath)
+    : Renderer{vpath, fpath} { }
+
+void MeshRenderer::render() {
+    glEnable(GL_DEPTH_TEST);
+    glUseProgram(sprogram.id());
+
+    for (auto& p_m : p_models) {
+        GLuint loc = glGetUniformLocation(sprogram.id(), "model");
+        glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(p_m->get_transform()));
+
+        p_m->draw();
+    }
+    
+    glDisable(GL_DEPTH_TEST);
+}
+
+void MeshRenderer::add_mesh(std::shared_ptr<Mesh> p_m) {
+    p_models.push_back(std::move(p_m));
+}
 
 PickerRenderer::PickerRenderer(unsigned width, unsigned height)
     : Renderer{"res/shaders/picker.vert", "res/shaders/picker.frag"}, width{width}, height{height} {
@@ -24,30 +57,59 @@ PickerRenderer::PickerRenderer(unsigned width, unsigned height)
 
     glGenRenderbuffers(1, &color_rbo);
     glBindRenderbuffer(GL_RENDERBUFFER, color_rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_R3_G3_B2, width, height);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_RG32F, width, height);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, color_rbo);
     
     glGenRenderbuffers(1, &depth_rbo);
     glBindRenderbuffer(GL_RENDERBUFFER, depth_rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_R3_G3_B2, width, height);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_rbo);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void PickerRenderer::render() {
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb_obj);
+    glEnable(GL_DEPTH_TEST);
+    glUseProgram(sprogram.id());
+
+    for (std::size_t i = 0; i < p_models.size(); ++i) {
+        GLuint loc = glGetUniformLocation(sprogram.id(), "model");
+        glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(p_models[i]->get_transform()));
+        loc = glGetUniformLocation(sprogram.id(), "obj_id");
+        glUniform1uiv(loc, 1, (GLuint const*) &i);
+
+        p_models[i]->draw();
+    }
     
+    glDisable(GL_DEPTH_TEST);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 }
 
-unsigned PickerRenderer::get_mesh_id(unsigned x, unsigned y) {
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, fb_obj);
+void PickerRenderer::add_mesh(std::shared_ptr<Mesh> p_m) {
+    p_models.push_back(std::move(p_m));
+}
 
-    unsigned id;
-    glReadPixels(x, height - y, 1, 1, GL_RGB, GL_UNSIGNED_INT, &id);
+std::optional<unsigned> PickerRenderer::get_mesh_id(unsigned x, unsigned y) {
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fb_obj);
+    glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+    GLfloat obj_id = 0.0f;
+    glReadPixels(x, y, 1, 1, GL_RED, GL_FLOAT, &obj_id);
+
+    GLfloat prim_id = 0.0f;
+    glReadPixels(x, y, 1, 1, GL_GREEN, GL_FLOAT, &prim_id);
     
+    glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 
-    return id;
+    std::cout << "PIXEL INFO: " << obj_id << ", " << prim_id << std::endl;
+
+    if (prim_id != 0.0f) {
+        return std::optional<unsigned>{static_cast<unsigned>(obj_id)};
+    } else {
+        return std::nullopt;
+    }
 }
 
 PickerRenderer::~PickerRenderer() {

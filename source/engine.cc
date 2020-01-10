@@ -27,10 +27,11 @@ void load_model_names(std::vector<std::string>& v) {
 }
 
 Engine::Engine(Chassis& chassis)
-    : chassis{chassis}, gui{*this} {
+    : chassis{chassis}, pr{(unsigned) chassis.get_width(), (unsigned) chassis.get_height()}, gui{*this} {
     glfwSetWindowUserPointer(chassis.get_window(), &ih);
     glfwSetKeyCallback(chassis.get_window(), &InputHandler::glfw_keyboard_handler);
     glfwSetCursorPosCallback(chassis.get_window(), &InputHandler::glfw_mouse_handler);
+    glfwSetMouseButtonCallback(chassis.get_window(), &InputHandler::glfw_mouse_click_handler);
 
     update_view();
 
@@ -67,6 +68,22 @@ Engine::Engine(Chassis& chassis)
         }
     ));
 
+    ih.set_mouse_click_handler("obj_picking", std::function<void(int, int)>(
+        [this](int button, int action) {
+            if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+                double xpos, ypos;
+                glfwGetCursorPos(this->chassis.get_window(), &xpos, &ypos);
+
+                auto obj_id = this->pr.get_mesh_id(xpos, ypos);
+                if (obj_id.has_value()) {
+                    std::cout << "Clicked on object: " << *obj_id << std::endl;
+                } else {
+                    std::cout << "Clicked on: " << xpos << ", " << ypos << std::endl;
+                }
+            }
+        }
+    ));
+
     ih.long_press_handler_enabled("mr_navigation", false);
     ih.mouse_handler_enabled("mr_navigation", false);
 
@@ -86,6 +103,7 @@ void Engine::run_loop() {
         cr.render();
         tr.render();
         if (!exploring) {
+            pr.render();
             gui.render();
         }
 
@@ -149,10 +167,16 @@ void Engine::load_model(std::string const& path) {
 
                 aiString path;
                 if (pMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &path, nullptr, nullptr, nullptr, nullptr, nullptr) == AI_SUCCESS) {
-                    tr.add_mesh(TexturedMesh{attribs_data, indices_data, "res/models/" + std::string{path.data}});
+                    auto p_model = std::shared_ptr<TexturedMesh>(new TexturedMesh{attribs_data, indices_data, "res/models/" + std::string{path.data}});
+                    tr.add_mesh(p_model);
+                    pr.add_mesh(p_model);
+                    p_models.push_back(p_model);
                 }
             } else {
-                cr.add_mesh(Mesh{attribs_data, indices_data});
+                auto p_model = std::shared_ptr<Mesh>(new Mesh{attribs_data, indices_data});
+                tr.add_mesh(p_model);
+                pr.add_mesh(p_model);
+                p_models.push_back(p_model);
             }
 
         }
@@ -170,17 +194,20 @@ void Engine::set_exploration_mode(bool exploration_mode) {
         
         ih.long_press_handler_enabled("mr_navigation", true);
         ih.mouse_handler_enabled("mr_navigation", true);
+        ih.mouse_click_handler_enabled("obj_picking", false);
     } else {
         glfwSetInputMode(chassis.get_window(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);        
 
         ih.long_press_handler_enabled("mr_navigation", false);
         ih.mouse_handler_enabled("mr_navigation", false);
+        ih.mouse_click_handler_enabled("obj_picking", true);
     }
 }
 
 void Engine::update_view() {
     cr.update_view(cam);
     tr.update_view(cam);
+    pr.update_view(cam);
 }
 
 void Engine::compute_click_pixels() {

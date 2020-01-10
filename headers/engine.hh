@@ -1,6 +1,7 @@
 #pragma once
 
 #define GLFW_INCLUDE_NONE
+#include <memory>
 #include <cstdint>
 #include <GLFW/glfw3.h>
 #include <imgui.h>
@@ -40,13 +41,18 @@ private:
 
     Chassis& chassis;
     Camera cam;
-    MeshRenderer<Mesh> cr{"res/shaders/model.vert", "res/shaders/model.frag"};
-    MeshRenderer<TexturedMesh> tr{"res/shaders/textured.vert", "res/shaders/textured.frag"};
+    MeshRenderer cr{"res/shaders/model.vert", "res/shaders/model.frag"};
+    MeshRenderer tr{"res/shaders/textured.vert", "res/shaders/textured.frag"};
+    PickerRenderer pr;
     Gui gui;
     InputHandler ih;
 
     bool exploring = false;
     double delta_time = 0.0;
+    double explo_mx = 0.0;
+    double explo_my = 0.0;
+    double last_mxpos, last_mypos;
+    std::vector<std::shared_ptr<Mesh>> p_models;
 
     void set_exploration_mode(bool);
     void update_view();
@@ -54,8 +60,5 @@ private:
 
     static bool engine_started;
     static std::vector<std::string> model_names;
-    double explo_mx = 0.0;
-    double explo_my = 0.0;
-    double last_mxpos, last_mypos;
 
 };

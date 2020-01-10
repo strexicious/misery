@@ -13,6 +13,9 @@ public:
 
     GLFWwindow* get_window() const;
 
+    int32_t get_width() const { return WIDTH; }
+    int32_t get_height() const { return HEIGHT; }
+
 private:
     const int32_t WIDTH;
     const int32_t HEIGHT;
