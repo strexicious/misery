@@ -28,6 +28,10 @@ void Renderer::update_view(Camera& cam) {
     glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(view));
 }
 
+void Renderer::active_default_fbo() {
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+}
+
 MeshRenderer::MeshRenderer(std::string const& vpath, std::string const& fpath)
     : Renderer{vpath, fpath} { }
 
@@ -69,7 +73,6 @@ PickerRenderer::PickerRenderer(unsigned width, unsigned height)
 }
 
 void PickerRenderer::render() {
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb_obj);
     glEnable(GL_DEPTH_TEST);
     glUseProgram(sprogram.id());
 
@@ -83,11 +86,14 @@ void PickerRenderer::render() {
     }
     
     glDisable(GL_DEPTH_TEST);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 }
 
 void PickerRenderer::add_mesh(std::shared_ptr<Mesh> p_m) {
     p_models.push_back(std::move(p_m));
+}
+
+void PickerRenderer::active_fbo() {
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb_obj);
 }
 
 std::optional<unsigned> PickerRenderer::get_mesh_id(unsigned x, unsigned y) {
@@ -98,7 +104,7 @@ std::optional<unsigned> PickerRenderer::get_mesh_id(unsigned x, unsigned y) {
     glReadPixels(x, y, 1, 1, GL_RED, GL_FLOAT, &obj_id);
 
     GLfloat prim_id = 0.0f;
-    glReadPixels(x, y, 1, 1, GL_GREEN, GL_FLOAT, &prim_id);
+    glReadPixels(x, height - y, 1, 1, GL_GREEN, GL_FLOAT, &prim_id);
     
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);

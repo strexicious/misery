@@ -20,6 +20,8 @@ public:
     virtual void render() = 0;
     void update_view(Camera&);
 
+    void active_default_fbo();
+
 protected:
 
     Program sprogram;
@@ -47,6 +49,9 @@ public:
 
     void render() override;
     void add_mesh(std::shared_ptr<Mesh> p_m);
+    
+    void active_fbo();
+    
     std::optional<unsigned> get_mesh_id(unsigned x, unsigned y);
 
 private:

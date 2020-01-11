@@ -94,16 +94,23 @@ void Engine::run_loop() {
     double last_time = glfwGetTime();
     delta_time = last_time;
     while (!glfwWindowShouldClose(chassis.get_window())) {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         double now = glfwGetTime();
         delta_time = now - last_time;
         last_time = now;
 
+        chassis.reset_clear_color();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
         cr.render();
         tr.render();
+        
         if (!exploring) {
+            pr.active_fbo();
+            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             pr.render();
+            pr.active_default_fbo();
+            
             gui.render();
         }
 
@@ -174,7 +181,7 @@ void Engine::load_model(std::string const& path) {
                 }
             } else {
                 auto p_model = std::shared_ptr<Mesh>(new Mesh{attribs_data, indices_data});
-                tr.add_mesh(p_model);
+                cr.add_mesh(p_model);
                 pr.add_mesh(p_model);
                 p_models.push_back(p_model);
             }

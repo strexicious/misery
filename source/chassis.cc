@@ -7,8 +7,8 @@
 
 bool Chassis::built = false;
 
-Chassis::Chassis(int width, int height, ColorRGB color)
-    : WIDTH{width}, HEIGHT{height} {
+Chassis::Chassis(int width, int height, ColorRGB clear_color)
+    : WIDTH{width}, HEIGHT{height}, clear_color{clear_color} {
     if (built)
         throw std::runtime_error("Chassis already built");
     
@@ -39,7 +39,8 @@ Chassis::Chassis(int width, int height, ColorRGB color)
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(dbgCallback, nullptr);
-    glClearColor(color.r, color.g, color.b, 1.0f);
+
+    reset_clear_color();
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -55,6 +56,10 @@ Chassis::Chassis(int width, int height, ColorRGB color)
 
 GLFWwindow* Chassis::get_window() const {
     return window;
+}
+
+void Chassis::reset_clear_color() {
+    glClearColor(clear_color.r, clear_color.g, clear_color.b, 1.0f);
 }
 
 Chassis::~Chassis() {

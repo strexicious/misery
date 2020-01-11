@@ -13,6 +13,8 @@ public:
 
     GLFWwindow* get_window() const;
 
+    void reset_clear_color();
+
     int32_t get_width() const { return WIDTH; }
     int32_t get_height() const { return HEIGHT; }
 
@@ -21,6 +23,7 @@ private:
     const int32_t HEIGHT;
 
     GLFWwindow* window;
+    ColorRGB clear_color;
 
     static bool built;
 
