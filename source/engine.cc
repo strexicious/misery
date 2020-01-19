@@ -39,6 +39,15 @@ Engine::Engine(Chassis& chassis)
         [this](int key) {
             if (key == GLFW_KEY_ESCAPE) {
                 set_exploration_mode(!exploring);
+                
+                if (moving_object.has_value()) {
+                    ih.mouse_click_handler_enabled("obj_move_commit", false);
+                    picked = false;
+                    ih.mouse_handler_enabled("obj_moving", false);
+                    auto obj = moving_object.value();
+                    obj->translate(this->last_pos - obj->cur_translate(), 1.0f);
+                    moving_object = std::nullopt;
+                }
             }
         }
     ));
@@ -59,12 +68,58 @@ Engine::Engine(Chassis& chassis)
 
     ih.set_mouse_handler("mr_navigation", std::function<void(double, double)>(
         [this](double xpos, double ypos) {
-            explo_mx -= last_mxpos - xpos;
-            explo_my -= last_mypos - ypos;
-            last_mxpos = xpos;
-            last_mypos = ypos;
-            cam.set_angles(explo_mx, explo_my);
+            this->explo_pos.cur_mx -= this->explo_pos.last_mxpos - xpos;
+            this->explo_pos.cur_my -= this->explo_pos.last_mypos - ypos;
+            this->explo_pos.last_mxpos = xpos;
+            this->explo_pos.last_mypos = ypos;
+            cam.set_angles(this->explo_pos.cur_mx, this->explo_pos.cur_my);
             update_view();
+        }
+    ));
+
+    ih.set_mouse_handler("obj_moving", std::function<void(double, double)>(
+        [this](double xpos, double ypos) {
+            // normalize x,y movement so it ranges [-1, 1]
+            // x needs to be multiplied to 1.77, because it doesn't really range between [-1,1]
+            // because of the aspect ratio correction
+            double moved_x = 1.77f * 2.0f * (xpos - this->moving_obj_pos.last_mxpos) / this->chassis.get_width();
+            double moved_y = 2.0f * (this->moving_obj_pos.last_mypos - ypos) / this->chassis.get_height();
+            auto cam_space_trans = glm::vec3(moved_x, moved_y, 0.0f);
+            auto trans_matrix = this->cam.to_world(cam_space_trans);
+
+            // since the object is only translated,
+            // translation vectors in both world space and object space are same.
+            glm::float32 proj_plane_d = 1.0f / glm::tan(glm::radians(45.0f));
+            std::cout << trans_matrix[0] << ", " << trans_matrix[1] << ", " << trans_matrix[2] << std::endl;
+            this->moving_object.value()->translate(trans_matrix, -this->pixel_depth / proj_plane_d);
+            this->moving_obj_pos.last_mxpos = xpos;
+            this->moving_obj_pos.last_mypos = ypos;
+        }
+    ));
+
+    ih.set_mouse_click_handler("obj_move_commit", std::function<void(int, int)>(
+        [this](int button, int action) {
+            if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+                if (!picked && this->moving_object.has_value()) {
+                    picked = true;
+                } else if (picked) {
+                    ih.mouse_click_handler_enabled("obj_move_commit", false);
+                    picked = false;
+                    ih.mouse_click_handler_enabled("obj_picking", true);
+                    ih.mouse_handler_enabled("obj_moving", false);
+                    moving_object = std::nullopt;
+                }
+            }
+
+            if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+                ih.mouse_click_handler_enabled("obj_move_commit", false);
+                picked = false;
+                ih.mouse_click_handler_enabled("obj_picking", true);
+                ih.mouse_handler_enabled("obj_moving", false);
+                auto obj = moving_object.value();
+                obj->translate(this->last_pos - obj->cur_translate(), 1.0f);
+                moving_object = std::nullopt;
+            }
         }
     ));
 
@@ -74,11 +129,17 @@ Engine::Engine(Chassis& chassis)
                 double xpos, ypos;
                 glfwGetCursorPos(this->chassis.get_window(), &xpos, &ypos);
 
-                auto obj_id = this->pr.get_mesh_id(xpos, ypos);
-                if (obj_id.has_value()) {
-                    std::cout << "Clicked on object: " << *obj_id << std::endl;
-                } else {
-                    std::cout << "Clicked on: " << xpos << ", " << ypos << std::endl;
+                auto obj_info = this->pr.get_mesh_info(xpos, ypos);
+                if (obj_info.has_value()) {
+                    this->last_pos = this->p_models[obj_info->first]->cur_translate();
+                    this->moving_object = this->p_models[obj_info->first];
+                    this->pixel_depth = obj_info->second;
+
+                    glfwGetCursorPos(this->chassis.get_window(), &this->moving_obj_pos.last_mxpos, &this->moving_obj_pos.last_mypos);
+                    
+                    ih.mouse_click_handler_enabled("obj_move_commit", true);
+                    ih.mouse_click_handler_enabled("obj_picking", false);
+                    ih.mouse_handler_enabled("obj_moving", true);
                 }
             }
         }
@@ -86,6 +147,8 @@ Engine::Engine(Chassis& chassis)
 
     ih.long_press_handler_enabled("mr_navigation", false);
     ih.mouse_handler_enabled("mr_navigation", false);
+    ih.mouse_handler_enabled("obj_moving", false);
+    ih.mouse_click_handler_enabled("obj_move_commit", false);
 
     load_model_names(model_names);
 }
@@ -104,7 +167,7 @@ void Engine::run_loop() {
         cr.render();
         tr.render();
         
-        if (!exploring) {
+        if (!exploring && !moving_object.has_value()) {
             pr.active_fbo();
             glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -196,7 +259,7 @@ void Engine::set_exploration_mode(bool exploration_mode) {
     exploring = exploration_mode;
     
     if (exploration_mode) {
-        glfwGetCursorPos(chassis.get_window(), &last_mxpos, &last_mypos);
+        glfwGetCursorPos(chassis.get_window(), &explo_pos.last_mxpos, &explo_pos.last_mypos);
         glfwSetInputMode(chassis.get_window(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         
         ih.long_press_handler_enabled("mr_navigation", true);
@@ -215,10 +278,6 @@ void Engine::update_view() {
     cr.update_view(cam);
     tr.update_view(cam);
     pr.update_view(cam);
-}
-
-void Engine::compute_click_pixels() {
-    
 }
 
 Engine::Gui::Gui(Engine& ngn)

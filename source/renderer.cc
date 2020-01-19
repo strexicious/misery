@@ -61,7 +61,7 @@ PickerRenderer::PickerRenderer(unsigned width, unsigned height)
 
     glGenRenderbuffers(1, &color_rbo);
     glBindRenderbuffer(GL_RENDERBUFFER, color_rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_RG32F, width, height);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB32F, width, height);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, color_rbo);
     
     glGenRenderbuffers(1, &depth_rbo);
@@ -96,23 +96,24 @@ void PickerRenderer::active_fbo() {
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fb_obj);
 }
 
-std::optional<unsigned> PickerRenderer::get_mesh_id(unsigned x, unsigned y) {
+std::optional<std::pair<unsigned, glm::float32>> PickerRenderer::get_mesh_info(unsigned x, unsigned y) {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, fb_obj);
     glReadBuffer(GL_COLOR_ATTACHMENT0);
 
     GLfloat obj_id = 0.0f;
-    glReadPixels(x, y, 1, 1, GL_RED, GL_FLOAT, &obj_id);
+    glReadPixels(x, height - y, 1, 1, GL_RED, GL_FLOAT, &obj_id);
 
     GLfloat prim_id = 0.0f;
     glReadPixels(x, height - y, 1, 1, GL_GREEN, GL_FLOAT, &prim_id);
+
+    glm::float32 pixel_depth;
+    glReadPixels(x, height - y, 1, 1, GL_BLUE, GL_FLOAT, &pixel_depth);
     
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 
-    std::cout << "PIXEL INFO: " << obj_id << ", " << prim_id << std::endl;
-
     if (prim_id != 0.0f) {
-        return std::optional<unsigned>{static_cast<unsigned>(obj_id)};
+        return std::make_pair(static_cast<unsigned>(obj_id), pixel_depth);
     } else {
         return std::nullopt;
     }

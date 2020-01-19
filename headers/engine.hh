@@ -29,6 +29,13 @@ private:
         
         void render_model_info();
     };
+
+    struct MouseTrack {
+        double cur_mx = 0.0;
+        double cur_my = 0.0;
+        double last_mxpos = 0.0;
+        double last_mypos = 0.0;
+    };
     
 public:
 
@@ -48,15 +55,21 @@ private:
     InputHandler ih;
 
     bool exploring = false;
+    // we need to use picked to keep track if we just picked an object, to not immediately
+    // drop it in the object_commt left button handler
+    bool picked = false;
+    std::optional<std::shared_ptr<Mesh>> moving_object = std::nullopt;
+    glm::vec3 last_pos{0.0f, 0.0f, 0.0f};
+    // we store the clicked fragment's depth from cam origin so we can use that to
+    // calculate the homogenous coordinate w factor
+    glm::float32 pixel_depth;
     double delta_time = 0.0;
-    double explo_mx = 0.0;
-    double explo_my = 0.0;
-    double last_mxpos, last_mypos;
+    MouseTrack explo_pos;
+    MouseTrack moving_obj_pos;
     std::vector<std::shared_ptr<Mesh>> p_models;
 
     void set_exploration_mode(bool);
     void update_view();
-    void compute_click_pixels();
 
     static bool engine_started;
     static std::vector<std::string> model_names;

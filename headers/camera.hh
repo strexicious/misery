@@ -17,6 +17,7 @@ public:
     void set_angles(GLfloat x, GLfloat y);
     
     glm::mat4 view() const;
+    glm::vec3 to_world(glm::vec3 v) const;
 
 private:
     float move_speed = 0.1f;

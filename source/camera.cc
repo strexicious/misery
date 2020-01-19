@@ -24,3 +24,7 @@ void Camera::set_angles(float x, float y) {
 glm::mat4 Camera::view() const {
     return glm::lookAt(pos, pos + forward, glm::vec3{0.f, 1.f, 0.f});
 }
+
+glm::vec3 Camera::to_world(glm::vec3 v) const {
+    return glm::inverse(view()) * glm::vec4(v, 0.0);
+}

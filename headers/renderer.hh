@@ -52,7 +52,7 @@ public:
     
     void active_fbo();
     
-    std::optional<unsigned> get_mesh_id(unsigned x, unsigned y);
+    std::optional<std::pair<unsigned, glm::float32>> get_mesh_info(unsigned x, unsigned y);
 
 private:
 

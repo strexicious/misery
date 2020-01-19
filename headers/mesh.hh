@@ -20,6 +20,7 @@ public:
 
     void translate(glm::vec3 dir, float units);
     glm::mat4 const& get_transform() const;
+    glm::vec3 cur_translate() const;
     
 protected:
 
