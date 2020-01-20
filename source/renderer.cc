@@ -14,47 +14,47 @@
 // =============================================
 
 Renderer::Renderer(std::string const& vpath, std::string const& fpath)
-    : sprogram{read_shader(vpath), read_shader(fpath)} {
+    : sprogram{read_shader(vpath), read_shader(fpath)} { }
+
+void Renderer::update_projection(Frustum& fru) {
     glUseProgram(sprogram.id());
-    glm::mat4 proj = glm::perspective(glm::radians(90.f), 1.77f, 0.1f, 100.f);
     GLuint loc = glGetUniformLocation(sprogram.id(), "proj");
-    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(proj));
+    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(fru.projection()));
 }
 
 void Renderer::update_view(Camera& cam) {
     glUseProgram(sprogram.id());
-    glm::mat4 view = cam.view();
     GLuint loc = glGetUniformLocation(sprogram.id(), "view");
-    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(cam.view()));
 }
 
 void Renderer::active_default_fbo() {
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 }
 
-MeshRenderer::MeshRenderer(std::string const& vpath, std::string const& fpath)
-    : Renderer{vpath, fpath} { }
+MeshRenderer::MeshRenderer(std::string const& vpath, std::string const& fpath, std::vector<std::unique_ptr<Mesh>>& models)
+    : Renderer{vpath, fpath}, models{models} { }
 
 void MeshRenderer::render() {
     glEnable(GL_DEPTH_TEST);
     glUseProgram(sprogram.id());
 
-    for (auto& p_m : p_models) {
+    for (auto i : models_idx) {
         GLuint loc = glGetUniformLocation(sprogram.id(), "model");
-        glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(p_m->get_transform()));
+        glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(models[i]->get_transform()));
 
-        p_m->draw();
+        models[i]->draw();
     }
     
     glDisable(GL_DEPTH_TEST);
 }
 
-void MeshRenderer::add_mesh(std::shared_ptr<Mesh> p_m) {
-    p_models.push_back(std::move(p_m));
+void MeshRenderer::add_mesh_idx(std::size_t i) {
+    models_idx.push_back(i);
 }
 
-PickerRenderer::PickerRenderer(unsigned width, unsigned height)
-    : Renderer{"res/shaders/picker.vert", "res/shaders/picker.frag"}, width{width}, height{height} {
+PickerRenderer::PickerRenderer(unsigned width, unsigned height, std::vector<std::unique_ptr<Mesh>>& models)
+    : Renderer{"res/shaders/picker.vert", "res/shaders/picker.frag"}, width{width}, height{height}, models{models} {
     glGenFramebuffers(1, &fb_obj);
 
     glBindFramebuffer(GL_FRAMEBUFFER, fb_obj);
@@ -76,20 +76,20 @@ void PickerRenderer::render() {
     glEnable(GL_DEPTH_TEST);
     glUseProgram(sprogram.id());
 
-    for (std::size_t i = 0; i < p_models.size(); ++i) {
+    for (auto i : models_idx) {
         GLuint loc = glGetUniformLocation(sprogram.id(), "model");
-        glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(p_models[i]->get_transform()));
+        glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(models[i]->get_transform()));
         loc = glGetUniformLocation(sprogram.id(), "obj_id");
         glUniform1uiv(loc, 1, (GLuint const*) &i);
 
-        p_models[i]->draw();
+        models[i]->draw();
     }
     
     glDisable(GL_DEPTH_TEST);
 }
 
-void PickerRenderer::add_mesh(std::shared_ptr<Mesh> p_m) {
-    p_models.push_back(std::move(p_m));
+void PickerRenderer::add_mesh_idx(std::size_t i) {
+    models_idx.push_back(i);
 }
 
 void PickerRenderer::active_fbo() {

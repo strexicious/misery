@@ -25,6 +25,15 @@ glm::mat4 Camera::view() const {
     return glm::lookAt(pos, pos + forward, glm::vec3{0.f, 1.f, 0.f});
 }
 
-glm::vec3 Camera::to_world(glm::vec3 v) const {
+glm::vec3 Camera::to_world_space(glm::vec3 v) const {
     return glm::inverse(view()) * glm::vec4(v, 0.0);
+}
+
+float Frustum::get_orig_w(float pixel_depth) const {
+    float proj_plane_d = 1.0f / glm::tan(glm::radians(fovy/2.0f));
+    return pixel_depth / proj_plane_d;
+}
+
+glm::mat4 Frustum::projection() const {
+    return glm::perspective(glm::radians(fovy), aspect_ratio, znear, zfar);
 }

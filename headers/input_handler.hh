@@ -41,6 +41,7 @@ public:
     static void glfw_mouse_click_handler(GLFWwindow* window, int button, int action, int mods);
 
 private:
+
     std::unordered_map<std::string, KeyboardHandler> presses;
     std::unordered_map<std::string, KeyboardHandler> long_presses;
     std::unordered_map<std::string, KeyboardHandler> releases;

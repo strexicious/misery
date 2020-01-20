@@ -48,27 +48,29 @@ private:
 
     Chassis& chassis;
     Camera cam;
-    MeshRenderer cr{"res/shaders/model.vert", "res/shaders/model.frag"};
-    MeshRenderer tr{"res/shaders/textured.vert", "res/shaders/textured.frag"};
+    MeshRenderer cr{"res/shaders/model.vert", "res/shaders/model.frag", p_models};
+    MeshRenderer tr{"res/shaders/textured.vert", "res/shaders/textured.frag", p_models};
     PickerRenderer pr;
     Gui gui;
+    Frustum fru;
     InputHandler ih;
 
     bool exploring = false;
     // we need to use picked to keep track if we just picked an object, to not immediately
     // drop it in the object_commt left button handler
     bool picked = false;
-    std::optional<std::shared_ptr<Mesh>> moving_object = std::nullopt;
+    std::optional<std::reference_wrapper<Mesh>> moving_object = std::nullopt;
     glm::vec3 last_pos{0.0f, 0.0f, 0.0f};
     // we store the clicked fragment's depth from cam origin so we can use that to
     // calculate the homogenous coordinate w factor
-    glm::float32 pixel_depth;
+    float pixel_depth;
     double delta_time = 0.0;
     MouseTrack explo_pos;
     MouseTrack moving_obj_pos;
-    std::vector<std::shared_ptr<Mesh>> p_models;
+    std::vector<std::unique_ptr<Mesh>> p_models;
 
     void set_exploration_mode(bool);
+    void update_projection();
     void update_view();
 
     static bool engine_started;

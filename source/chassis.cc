@@ -7,7 +7,7 @@
 
 bool Chassis::built = false;
 
-Chassis::Chassis(int width, int height, ColorRGB clear_color)
+Chassis::Chassis(unsigned width, unsigned height, ColorRGB clear_color)
     : WIDTH{width}, HEIGHT{height}, clear_color{clear_color} {
     if (built)
         throw std::runtime_error("Chassis already built");

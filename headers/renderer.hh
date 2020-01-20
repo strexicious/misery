@@ -18,6 +18,7 @@ public:
     Renderer(std::string const&, std::string const&);
 
     virtual void render() = 0;
+    void update_projection(Frustum& fru);
     void update_view(Camera&);
 
     void active_default_fbo();
@@ -31,28 +32,29 @@ protected:
 class MeshRenderer : public Renderer {
 public:
 
-    MeshRenderer(std::string const& vpath, std::string const& fpath);
+    MeshRenderer(std::string const& vpath, std::string const& fpath, std::vector<std::unique_ptr<Mesh>>& models);
 
     void render() override;
-    void add_mesh(std::shared_ptr<Mesh> p_m);
+    void add_mesh_idx(std::size_t i);
 
 private:
 
-    std::vector<std::shared_ptr<Mesh>> p_models;
+    std::vector<std::unique_ptr<Mesh>>& models;
+    std::vector<std::size_t> models_idx;
 };
 
 class PickerRenderer : public Renderer {
 public:
 
-    PickerRenderer(unsigned width, unsigned height);
+    PickerRenderer(unsigned width, unsigned height, std::vector<std::unique_ptr<Mesh>>& models);
     ~PickerRenderer();
 
     void render() override;
-    void add_mesh(std::shared_ptr<Mesh> p_m);
+    void add_mesh_idx(std::size_t i);
     
     void active_fbo();
     
-    std::optional<std::pair<unsigned, glm::float32>> get_mesh_info(unsigned x, unsigned y);
+    std::optional<std::pair<unsigned, float>> get_mesh_info(unsigned x, unsigned y);
 
 private:
 
@@ -60,6 +62,7 @@ private:
     GLuint fb_obj;
     GLuint color_rbo, depth_rbo;
 
-    std::vector<std::shared_ptr<Mesh>> p_models;
+    std::vector<std::unique_ptr<Mesh>>& models;
+    std::vector<std::size_t> models_idx;
     
 };

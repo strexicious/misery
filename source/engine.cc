@@ -27,12 +27,14 @@ void load_model_names(std::vector<std::string>& v) {
 }
 
 Engine::Engine(Chassis& chassis)
-    : chassis{chassis}, pr{(unsigned) chassis.get_width(), (unsigned) chassis.get_height()}, gui{*this} {
+    : chassis{chassis}, pr{chassis.get_width(), chassis.get_height(), p_models}, gui{*this},
+    fru{chassis.get_width(), chassis.get_height()} {
     glfwSetWindowUserPointer(chassis.get_window(), &ih);
     glfwSetKeyCallback(chassis.get_window(), &InputHandler::glfw_keyboard_handler);
     glfwSetCursorPosCallback(chassis.get_window(), &InputHandler::glfw_mouse_handler);
     glfwSetMouseButtonCallback(chassis.get_window(), &InputHandler::glfw_mouse_click_handler);
 
+    update_projection();
     update_view();
 
     ih.set_press_handler("engine_exploration", std::function<void(int)>(
@@ -44,8 +46,8 @@ Engine::Engine(Chassis& chassis)
                     ih.mouse_click_handler_enabled("obj_move_commit", false);
                     picked = false;
                     ih.mouse_handler_enabled("obj_moving", false);
-                    auto obj = moving_object.value();
-                    obj->translate(this->last_pos - obj->cur_translate(), 1.0f);
+                    Mesh& obj = moving_object.value();
+                    obj.translate(this->last_pos - obj.cur_translate(), 1.0f);
                     moving_object = std::nullopt;
                 }
             }
@@ -82,16 +84,15 @@ Engine::Engine(Chassis& chassis)
             // normalize x,y movement so it ranges [-1, 1]
             // x needs to be multiplied to 1.77, because it doesn't really range between [-1,1]
             // because of the aspect ratio correction
-            double moved_x = 1.77f * 2.0f * (xpos - this->moving_obj_pos.last_mxpos) / this->chassis.get_width();
+            double moved_x = fru.get_aspect_ratio() * 2.0f * (xpos - this->moving_obj_pos.last_mxpos) / this->chassis.get_width();
             double moved_y = 2.0f * (this->moving_obj_pos.last_mypos - ypos) / this->chassis.get_height();
             auto cam_space_trans = glm::vec3(moved_x, moved_y, 0.0f);
-            auto trans_matrix = this->cam.to_world(cam_space_trans);
 
             // since the object is only translated,
             // translation vectors in both world space and object space are same.
-            glm::float32 proj_plane_d = 1.0f / glm::tan(glm::radians(45.0f));
-            std::cout << trans_matrix[0] << ", " << trans_matrix[1] << ", " << trans_matrix[2] << std::endl;
-            this->moving_object.value()->translate(trans_matrix, -this->pixel_depth / proj_plane_d);
+            auto trans_matrix = this->cam.to_world_space(cam_space_trans);
+
+            this->moving_object.value().get().translate(trans_matrix, -fru.get_orig_w(pixel_depth));
             this->moving_obj_pos.last_mxpos = xpos;
             this->moving_obj_pos.last_mypos = ypos;
         }
@@ -116,8 +117,8 @@ Engine::Engine(Chassis& chassis)
                 picked = false;
                 ih.mouse_click_handler_enabled("obj_picking", true);
                 ih.mouse_handler_enabled("obj_moving", false);
-                auto obj = moving_object.value();
-                obj->translate(this->last_pos - obj->cur_translate(), 1.0f);
+                Mesh& obj = moving_object.value();
+                obj.translate(this->last_pos - obj.cur_translate(), 1.0f);
                 moving_object = std::nullopt;
             }
         }
@@ -132,7 +133,7 @@ Engine::Engine(Chassis& chassis)
                 auto obj_info = this->pr.get_mesh_info(xpos, ypos);
                 if (obj_info.has_value()) {
                     this->last_pos = this->p_models[obj_info->first]->cur_translate();
-                    this->moving_object = this->p_models[obj_info->first];
+                    this->moving_object = *(this->p_models[obj_info->first]);
                     this->pixel_depth = obj_info->second;
 
                     glfwGetCursorPos(this->chassis.get_window(), &this->moving_obj_pos.last_mxpos, &this->moving_obj_pos.last_mypos);
@@ -237,16 +238,16 @@ void Engine::load_model(std::string const& path) {
 
                 aiString path;
                 if (pMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &path, nullptr, nullptr, nullptr, nullptr, nullptr) == AI_SUCCESS) {
-                    auto p_model = std::shared_ptr<TexturedMesh>(new TexturedMesh{attribs_data, indices_data, "res/models/" + std::string{path.data}});
-                    tr.add_mesh(p_model);
-                    pr.add_mesh(p_model);
-                    p_models.push_back(p_model);
+                    std::unique_ptr<Mesh> p_model = std::make_unique<TexturedMesh>(attribs_data, indices_data, "res/models/" + std::string{path.data});
+                    p_models.push_back(std::move(p_model));
+                    tr.add_mesh_idx(p_models.size() - 1);
+                    pr.add_mesh_idx(p_models.size() - 1);
                 }
             } else {
-                auto p_model = std::shared_ptr<Mesh>(new Mesh{attribs_data, indices_data});
-                cr.add_mesh(p_model);
-                pr.add_mesh(p_model);
-                p_models.push_back(p_model);
+                std::unique_ptr<Mesh> p_model = std::make_unique<Mesh>(attribs_data, indices_data);
+                p_models.push_back(std::move(p_model));
+                cr.add_mesh_idx(p_models.size() - 1);
+                pr.add_mesh_idx(p_models.size() - 1);
             }
 
         }
@@ -272,6 +273,12 @@ void Engine::set_exploration_mode(bool exploration_mode) {
         ih.mouse_handler_enabled("mr_navigation", false);
         ih.mouse_click_handler_enabled("obj_picking", true);
     }
+}
+
+void Engine::update_projection() {
+    cr.update_projection(fru);
+    tr.update_projection(fru);
+    pr.update_projection(fru);
 }
 
 void Engine::update_view() {
