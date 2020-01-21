@@ -1,14 +1,14 @@
 #include <iostream>
 #include <stdexcept>
 #include <functional>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <glad/glad.h>
 #include "engine.hh"
 
-using namespace boost::filesystem;
+using namespace std::filesystem;
 
 bool Engine::engine_started = false;
 std::vector<std::string> Engine::model_names{};
